@@ -1,5 +1,6 @@
 import html
 import os
+import tempfile
 import time
 
 import streamlit as st
@@ -342,7 +343,23 @@ with st.sidebar:
     st.markdown("---")
 
     st.markdown('<span class="badge badge-purple">New session</span>', unsafe_allow_html=True)
-    source = st.text_input("Video or audio source", placeholder="Paste a YouTube link or local file path")
+    input_method = st.segmented_control(
+        "Media source",
+        ["YouTube link", "Upload media"],
+        default="YouTube link",
+        key="media_input_method",
+    )
+    source = ""
+    uploaded_media = None
+    if input_method == "YouTube link":
+        source = st.text_input("YouTube URL or local file path", placeholder="Paste a YouTube link")
+    else:
+        uploaded_media = st.file_uploader(
+            "Choose an audio or video file",
+            type=["mp3", "mp4", "m4a", "wav", "webm", "mpeg", "mpga", "ogg", "flac", "aac", "mov", "mkv"],
+            max_upload_size=100,
+            help="Upload a file up to 100 MB. On the deployed app, use this option when YouTube blocks a link.",
+        )
 
     language_label = st.segmented_control("Transcript language", ["English", "Hinglish"], default="English")
     language = language_label.lower()
@@ -369,13 +386,13 @@ st.markdown("---")
 
 # ── Run Pipeline ────────────────────────────────────────────────────────────────
 if run_btn:
-    if not source.strip():
-        st.error("Please enter a YouTube URL or file path.")
+    if not source.strip() and uploaded_media is None:
+        st.error("Enter a YouTube URL or choose an audio/video file to upload.")
     elif required_api_key_name() and not os.getenv(required_api_key_name()):
         st.error("Add the required API key for the selected provider to the project .env file, then restart the app. Local Ollama mode does not require a key. See README.md for setup steps.")
     elif language == "hinglish" and not os.getenv("SARVAM_API_KEY"):
         st.error("Add your SARVAM_API_KEY to the project .env file to use Hinglish transcription.")
-    elif not source.startswith(("http://", "https://")) and not os.path.isfile(source):
+    elif source.strip() and not source.startswith(("http://", "https://")) and not os.path.isfile(source):
         st.error("That file path could not be found. Enter the full path to an audio or video file.")
     else:
         st.session_state.pipeline_done = False
@@ -388,12 +405,20 @@ if run_btn:
         def update_step(key, state):
             st.session_state.pipeline_steps[key] = state
 
+        temporary_upload_path = None
         try:
             with progress_placeholder.container():
                 st.info("⚙️ Pipeline running — see sidebar for live status…")
 
             update_step("audio", "active")
-            chunks = process_input(source)
+            processing_source = source
+            if uploaded_media is not None:
+                suffix = os.path.splitext(uploaded_media.name)[1].lower()
+                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+                    temp_file.write(uploaded_media.getvalue())
+                    temporary_upload_path = temp_file.name
+                processing_source = temporary_upload_path
+            chunks = process_input(processing_source)
             update_step("audio", "done")
 
             update_step("transcript", "active")
@@ -445,7 +470,19 @@ if run_btn:
                     "Your transcript is still local and was not lost."
                 )
             else:
-                progress_placeholder.error(f"❌ Error: {e}")
+                if "403" in error_text and source.startswith(("http://", "https://")):
+                    progress_placeholder.error(
+                        "YouTube blocked this download from the hosted app. Choose Upload media in the sidebar "
+                        "and upload the video or audio file instead."
+                    )
+                else:
+                    progress_placeholder.error(f"❌ Error: {e}")
+        finally:
+            if temporary_upload_path and os.path.exists(temporary_upload_path):
+                try:
+                    os.remove(temporary_upload_path)
+                except OSError:
+                    pass
 
 # ── Results ──────────────────────────────────────────────────────────────────────
 if st.session_state.result:
