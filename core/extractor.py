@@ -1,15 +1,11 @@
 #Actionableitems , decision , questions 
 
-from langchain_mistralai import ChatMistralAI
+from core.llm_provider import get_llm
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-import os 
-
-
-def get_llm():
-    return ChatMistralAI(model = "mistral-small-latest", mistral_api_key = os.getenv("MISTRAL_API_KEY"),temperature=0.2)
-
+import os
+from core.mistral_client import invoke_with_rate_limit_retry
 
 
 def build_chain(system_prompt : str):
@@ -31,7 +27,7 @@ def extract_action_items(transcript:str)->str:
         "Format as a numbered list. If none found say 'No action items found.'"
     )
 
-    return chain.invoke(transcript)
+    return invoke_with_rate_limit_retry(chain, transcript)
 
 
 def extract_key_decisions(transcript: str) -> str:
@@ -40,7 +36,7 @@ def extract_key_decisions(transcript: str) -> str:
         "extract all key decisions made. Format as a numbered list. "
         "If none found say 'No key decisions found.'"
     )
-    return chain.invoke(transcript)
+    return invoke_with_rate_limit_retry(chain, transcript)
 
 
 def extract_questions(transcript: str) -> str:
@@ -49,4 +45,5 @@ def extract_questions(transcript: str) -> str:
         "or topics needing follow-up. Format as a numbered list. "
         "If none found say 'No open questions found.'"
     )
-    return chain.invoke(transcript)
+    return invoke_with_rate_limit_retry(chain, transcript)
+

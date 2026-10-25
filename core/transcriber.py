@@ -9,6 +9,8 @@ SARVAM_PIECE_SECONDS = 25
 
 
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+WHISPER_CACHE_DIR = os.getenv("WHISPER_CACHE_DIR", os.path.join(PROJECT_ROOT, "model_cache", "whisper"))
 
 
 SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
@@ -24,7 +26,8 @@ def load_model():
 
     if _model is None: 
         print(f"Loading Whisper model: {WHISPER_MODEL} ...")
-        _model = whisper.load_model(WHISPER_MODEL) 
+        os.makedirs(WHISPER_CACHE_DIR, exist_ok=True)
+        _model = whisper.load_model(WHISPER_MODEL, download_root=WHISPER_CACHE_DIR)
         print("Whisper model loaded.")
     return _model 
 

@@ -1,0 +1,23 @@
+[theme]
+base = "dark"
+primaryColor = "#d47b53"
+backgroundColor = "#151e1b"
+secondaryBackgroundColor = "#1d2925"
+textColor = "#f1ede3"
+borderColor = "#394a42"
+font = "DM Sans:https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+headingFont = "Newsreader:https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap"
+codeFont = "IBM Plex Mono:https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
+baseRadius = "0.65rem"
+buttonRadius = "0.65rem"
+showWidgetBorder = true
+showSidebarBorder = true
+paddingTop = "2rem"
+paddingBottom = "2.5rem"
+
+[theme.sidebar]
+backgroundColor = "#111a17"
+secondaryBackgroundColor = "#1d2925"
+textColor = "#f1ede3"
+borderColor = "#33433d"
+primaryColor = "#d47b53"

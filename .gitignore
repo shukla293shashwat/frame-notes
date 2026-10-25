@@ -1,1 +1,13 @@
 .env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+downloades/
+chroma_db/
+*.wav
+*.mp3
+*.mp4
+vector_db/
+.streamlit/secrets.toml
+model_cache/
